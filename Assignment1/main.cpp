@@ -73,6 +73,8 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
     float n = zNear, f = zFar;
     float l = -zNear * tan(fov_x / 2), r = -l;
 
+
+
     Eigen::Matrix4f move;
     move << 1, 0, 0, - (l + r) / 2,
             0, 1, 0, - (t + b) / 2,
@@ -110,7 +112,7 @@ int main(int argc, const char** argv)
 
     Eigen::Vector3f eye_pos = {0, 0, 5};
 
-    std::vector<Eigen::Vector3f> pos{{2, 0, -2}, {0, 2, -2}, {-2, 0, -2}};
+    std::vector<Eigen::Vector3f> pos{{2, 0, 2}, {0, 2, 2}, {-2, 0, 2}};
 
     std::vector<Eigen::Vector3i> ind{{0, 1, 2}};
 

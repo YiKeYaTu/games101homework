@@ -6,6 +6,7 @@
 #define RASTERIZER_SHADER_H
 #include <Eigen/Eigen>
 #include "Texture.hpp"
+#include "Triangle.hpp"
 
 
 struct fragment_shader_payload
@@ -24,6 +25,7 @@ struct fragment_shader_payload
     Eigen::Vector3f normal;
     Eigen::Vector2f tex_coords;
     Texture* texture;
+    std::array<float, 3> vertexes_distance;
 };
 
 struct vertex_shader_payload

@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "rasterizer.hpp"
 #include <opencv2/opencv.hpp>
+#include <array>
 #include <math.h>
 
 
@@ -149,18 +150,55 @@ auto to_vec4(const Eigen::Vector3f& v3, float w = 1.0f)
     return Vector4f(v3.x(), v3.y(), v3.z(), w);
 }
 
+static std::array<float, 3> compute_distances(int x, int y, const Vector4f* _v) {
+    Vector2f v[3];
+    for(int i = 0; i < 3; i ++) {
+        v[i] = {_v[i].x(), _v[i].y()};
+    }
+
+    Vector3f line_funcs[3];
+    for(int i = 0; i < 3; i ++) {
+        int j = i == 2 ? 0 : i + 1;
+        float A = (v[j].y() - v[i].y()) / ((v[j]).x() - v[i].x());
+        float B = -1;
+        float C = v[j].y() - A * v[j].x();
+
+        line_funcs[i] = Eigen::Vector3f { A, B, C };
+    }
+
+    std::array<float, 3> distances;
+
+    for(int i = 0; i < 3; i ++) {
+        float A = line_funcs[i].x(), B = line_funcs[i].y(), C = line_funcs[i].z();
+        distances[i] = abs(A * x + B * y + C) / sqrt(A * A + B * B);
+    }
+
+    return distances;
+}
+
 static bool insideTriangle(int x, int y, const Vector4f* _v){
     Vector3f v[3];
     for(int i=0;i<3;i++)
         v[i] = {_v[i].x(),_v[i].y(), 1.0};
-    Vector3f f0,f1,f2;
-    f0 = v[1].cross(v[0]);
-    f1 = v[2].cross(v[1]);
-    f2 = v[0].cross(v[2]);
-    Vector3f p(x,y,1.);
-    if((p.dot(f0)*f0.dot(v[2])>0) && (p.dot(f1)*f1.dot(v[0])>0) && (p.dot(f2)*f2.dot(v[1])>0))
-        return true;
-    return false;
+
+    std::vector<Eigen::Vector3f> polygonVectors;
+    for (int i = 0; i < 3; ++i) {
+        if (i == 2) {
+            polygonVectors.push_back(v[0] - v[i]);
+        } else {
+            polygonVectors.push_back(v[i + 1] - v[i]);
+        }
+    }
+
+    for (int i = 0; i < 3; ++i) {
+        auto pointVector = Eigen::Vector3f { x, y, 1.0 } - v[i];
+
+        if (pointVector.cross(polygonVectors[i]).z() > 0) {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 static std::tuple<float, float, float> computeBarycentric2D(float x, float y, const Vector4f* v){
@@ -311,12 +349,16 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t, const std::array<Eig
             auto interpolated_shading_coords = alpha * view_pos[0] + beta * view_pos[1] + gamma * view_pos[2];
             auto interpolated_tex_coords = alpha * t.tex_coords[0] + beta * t.tex_coords[1] + gamma * t.tex_coords[2];
 
+            auto averaged_normal = (t.normal[0] + t.normal[1]  + t.normal[2]) / 3;
+
             auto payload = fragment_shader_payload();
             payload.color = interpolated_color;
-            payload.normal = interpolated_normal;
+//            payload.normal = interpolated_normal;
+            payload.normal = averaged_normal;
             payload.view_pos = interpolated_shading_coords;
             payload.tex_coords = interpolated_tex_coords;
             payload.texture = &texture.value();
+            payload.vertexes_distance = compute_distances(x, y, &v[0]);
 
             int ind = (height - y) * width + x;
 
@@ -326,15 +368,12 @@ void rst::rasterizer::rasterize_triangle(const Triangle& t, const std::array<Eig
             }
         }
     }
-    // TODO: Interpolate the attributes:
-    // auto interpolated_texcoords
 
-    // Use: fragment_shader_payload payload( interpolated_color, interpolated_normal.normalized(), interpolated_texcoords, texture ? &*texture : nullptr);
-    // Use: payload.view_pos = interpolated_shadingcoords;
-    // Use: Instead of passing the triangle's color directly to the frame buffer, pass the color to the shaders first to get the final color;
-    // Use: auto pixel_color = fragment_shader(payload);
+//    draw_line(v[2].head<3>(), v[0].head<3>());
+//    for (int i = 0; i < 2; ++i) {
+//        draw_line(v[i].head<3>(), v[i + 1].head<3>());
+//    }
 
- 
 }
 
 void rst::rasterizer::set_model(const Eigen::Matrix4f& m)

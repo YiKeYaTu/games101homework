@@ -219,6 +219,18 @@ Eigen::Vector3f phong_fragment_shader(const fragment_shader_payload& payload)
     return result_color * 255.f;
 }
 
+Eigen::Vector3f triangle_fragment_shader(const fragment_shader_payload& payload) {
+    fragment_shader_payload p = static_cast<const fragment_shader_payload&>(payload);
+
+    for (const auto &item : p.vertexes_distance) {
+        if (item < 0.5) {
+            p.color = Eigen::Vector3f { 0, 0, 0 };
+        }
+    }
+
+    return phong_fragment_shader(p);
+}
+
 Eigen::Vector3f displacement_fragment_shader(const fragment_shader_payload& payload)
 {
     
@@ -298,7 +310,6 @@ Eigen::Vector3f displacement_fragment_shader(const fragment_shader_payload& payl
 
     return result_color * 255.f;
 }
-
 
 Eigen::Vector3f bump_fragment_shader(const fragment_shader_payload& payload)
 {
@@ -419,6 +430,11 @@ int main(int argc, const char** argv)
         {
             std::cout << "Rasterizing using the bump shader\n";
             active_shader = displacement_fragment_shader;
+        }
+        else if (argc == 3 && std::string(argv[2]) == "triangle")
+        {
+            std::cout << "Rasterizing using the triangle shader\n";
+            active_shader = triangle_fragment_shader;
         }
     }
 
