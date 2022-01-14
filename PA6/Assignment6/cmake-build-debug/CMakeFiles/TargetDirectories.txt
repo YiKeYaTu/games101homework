@@ -1,0 +1,3 @@
+/Users/liangchen/Documents/Project/games/PA6/Assignment6/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/Users/liangchen/Documents/Project/games/PA6/Assignment6/cmake-build-debug/CMakeFiles/edit_cache.dir
+/Users/liangchen/Documents/Project/games/PA6/Assignment6/cmake-build-debug/CMakeFiles/RayTracing.dir
